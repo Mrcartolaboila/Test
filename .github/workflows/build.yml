@@ -1,0 +1,40 @@
+
+name: Gerar APK GKME
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Extrair código
+        run: |
+          mkdir projeto
+          unzip -q "$(find . -maxdepth 1 -name '*.zip' | head -n 1)" -d projeto
+          echo "PROJETO=$PWD/projeto/GKME-4.6.1" >> "$GITHUB_ENV"
+
+      - name: Preparar Android
+        run: |
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0" "ndk;30.0.16248370" "cmake;4.4.3"
+
+      - name: Compilar APK
+        run: |
+          cd "$PROJETO"
+          chmod +x gradlew
+          ./gradlew --no-daemon :android:assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: APK-GKME
+          path: projeto/GKME-4.6.1/android/build/outputs/apk/debug/*.apk
+          
